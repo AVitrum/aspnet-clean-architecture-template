@@ -1,3 +1,5 @@
+using Domain.Exceptions;
+
 namespace Infrastructure.Repositories;
 
 public abstract class BaseRepository<T> : IBaseRepository<T> where T : class
@@ -31,7 +33,7 @@ public abstract class BaseRepository<T> : IBaseRepository<T> where T : class
     
     public virtual async Task<T> GetByIdAsync(Guid id)
     {
-        return await _dbSet.FindAsync(id) ?? throw new Exception("Entity not found");
+        return await _dbSet.FindAsync(id) ?? throw new EntityNotFoundException<T>();
     }
 
     public virtual async Task<IEnumerable<T>> GetAllAsync()

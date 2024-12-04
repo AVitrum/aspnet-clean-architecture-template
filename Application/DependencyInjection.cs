@@ -1,5 +1,6 @@
 using Application.Books;
 using Application.Common.Interfaces;
+using Application.Files;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application;
@@ -11,6 +12,7 @@ public static class DependencyInjection
         services.AddAutoMapper(typeof(DependencyInjection).Assembly);
 
         services.AddScoped<IBookService, BookService>();
+        services.AddScoped<IFileService, FileService>();
         return services;
     }
 }
