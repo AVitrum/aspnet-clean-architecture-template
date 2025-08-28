@@ -28,8 +28,8 @@ public static class ApplicationBuilderExtensions
     
     public static void ConfigurePipeline(this WebApplication app)
     {
-        // app.UseSwagger();
-        // app.UseSwaggerUI();
+        app.UseSwagger();
+        app.UseSwaggerUI();
         app.UseExceptionHandler("/error");
         app.UseHttpsRedirection();
         app.UseRouting();
