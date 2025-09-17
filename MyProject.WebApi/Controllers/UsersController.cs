@@ -1,9 +1,8 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using MyProject.Application.Interfaces;
+using MyProject.Application.Authentication.Commands.Authenticate;
+using MyProject.Application.Authentication.Commands.Register;
 using MyProject.Application.Payloads.Requests;
-using MyProject.Domain.Entities;
-using MyProject.Domain.Enums;
-using MyProject.WebApi.Attributes;
 
 namespace MyProject.WebApi.Controllers;
 
@@ -11,24 +10,26 @@ namespace MyProject.WebApi.Controllers;
 [Route("[controller]")]
 public sealed class UsersController : ControllerBase
 {
-    private readonly IAuthenticationService _userService;
+    private readonly IMediator _mediator;
 
-    public UsersController(IAuthenticationService userService)
+    public UsersController(IMediator mediator)
     {
-        _userService = userService;
+        _mediator = mediator;
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var result = await _userService.RegisterAsync(request.Username, request.Email, request.Password);
+        var command = new RegisterCommand(request.Username, request.Email, request.Password);
+        var result = await _mediator.Send(command);
         return StatusCode(result.Code, result);
     }
 
     [HttpPost("authenticate")]
     public async Task<IActionResult> Authenticate([FromBody] AuthenticateRequest request)
     {
-        var result = await _userService.AuthenticateAsync(request.Username, request.Password);
+        var command = new AuthenticateCommand(request.Username, request.Password);
+        var result = await _mediator.Send(command);
         return StatusCode(result.Code, result);
     }
 }

@@ -6,6 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddMediatR(cfg => 
+    cfg.RegisterServicesFromAssembly(typeof(MyProject.Application.DependencyInjection).Assembly));
+
 var defaultDirectory = EnvironmentSetup.ConfigureEnvironment(builder);
 LoggingConfiguration.ConfigureLogging(builder, defaultDirectory);
 
