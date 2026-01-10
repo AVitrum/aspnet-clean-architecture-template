@@ -8,10 +8,12 @@ namespace WebApi.Middleware;
 public class JwtMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly IConfiguration _configuration;
 
-    public JwtMiddleware(RequestDelegate next)
+    public JwtMiddleware(RequestDelegate next, IConfiguration configuration)
     {
         _next = next;
+        _configuration = configuration;
     }
 
     public async Task Invoke(HttpContext context, IUserRepository userRepository)
@@ -24,20 +26,20 @@ public class JwtMiddleware
         await _next(context);
     }
 
-    private static async Task AttachUserToContext(HttpContext context, IUserRepository userRepository, string token)
+    private async Task AttachUserToContext(HttpContext context, IUserRepository userRepository, string token)
     {
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")!);
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuer = true,
                 ValidateAudience = true,
-                ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
-                ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidAudience = _configuration["Jwt:Audience"],
                 ClockSkew = TimeSpan.Zero
             }, out var validatedToken);
 

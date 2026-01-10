@@ -2,7 +2,7 @@ using WebApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var defaultDirectory = EnvironmentSetup.ConfigureEnvironment(builder);
+var defaultDirectory = EnvironmentSetup.GetBaseDirectory();
 LoggingConfiguration.ConfigureLogging(builder, defaultDirectory);
 
 builder.Services.AddOpenApi();

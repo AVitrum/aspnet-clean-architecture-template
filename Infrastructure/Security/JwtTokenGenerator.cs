@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Application.Interfaces.Security;
 using Domain.Entities;
@@ -9,10 +10,17 @@ namespace Infrastructure.Security;
 
 public sealed class JwtTokenGenerator : IJwtTokenGenerator
 {
+    private readonly IConfiguration _configuration;
+
+    public JwtTokenGenerator(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
     public string GenerateToken(User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = System.Text.Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")!);
+        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity([
@@ -22,8 +30,8 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             ]),
             Expires = DateTime.UtcNow.AddHours(1),
-            Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
-            Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+            Issuer = _configuration["Jwt:Issuer"],
+            Audience = _configuration["Jwt:Audience"],
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
         

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Application.Interfaces.Persistence;
@@ -16,7 +17,8 @@ public static class DependencyInjection
     {
         // Persistence
         services.AddDbContext<AppDbContext>(opt => 
-            opt.UseNpgsql(Environment.GetEnvironmentVariable("DB_CONNECTION")));
+            opt.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
+               .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IDbMigrator, DbMigrator>();

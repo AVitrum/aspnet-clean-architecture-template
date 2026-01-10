@@ -24,7 +24,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired();
 
         builder.Property(u => u.Role)
-            .HasConversion<string>()
+            .HasConversion<int>()
             .IsRequired();
 
         builder.Property(u => u.CreatedAt)

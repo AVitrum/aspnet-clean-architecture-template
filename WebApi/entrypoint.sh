@@ -3,7 +3,7 @@ set -e
 
 chown -R ${APP_UID}:${APP_UID} /https
 
-CERT_PATH="/https/myproject.pfx"
+CERT_PATH="/https/app.pfx"
 
 gosu ${APP_UID} bash <<EOF
 if [ ! -f "$CERT_PATH" ]; then
@@ -14,4 +14,4 @@ else
 fi
 EOF
 
-exec gosu ${APP_UID} dotnet MyProject.WebApi.dll
+exec gosu ${APP_UID} dotnet WebApi.dll
