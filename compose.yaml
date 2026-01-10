@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: myproject
+      POSTGRES_DB: cleanarch
     ports:
       - "5432:5432"
     volumes:
@@ -14,7 +14,7 @@ services:
     image: server
     build:
       context: .
-      dockerfile: MyProject.WebApi/Dockerfile
+      dockerfile: WebApi/Dockerfile
     ports:
       - "8001:443"
       - "8000:80"
@@ -23,7 +23,7 @@ services:
       ASPNETCORE_URLS: "http://+;https://+"
       ASPNETCORE_ENVIRONMENT: "Development"
       ASPNETCORE_Kestrel__Certificates__Default__Password: ${KESTREL_CERTIFICATES_DEFAULT_PASSWORD}
-      ASPNETCORE_Kestrel__Certificates__Default__Path: "/https/myproject.pfx"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: "/https/app.pfx"
       DB_CONNECTION: ${DB_CONNECTION}
       JWT_KEY: ${JWT_KEY}
       JWT_ISSUER: ${JWT_ISSUER}
