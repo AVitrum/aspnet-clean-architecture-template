@@ -1,20 +1,17 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using MyProject.Domain.Interfaces;
+using MyProject.Application.Interfaces.Repositories;
 
 namespace MyProject.WebApi.Middleware;
 
 public class JwtMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IConfiguration _configuration;
 
-    public JwtMiddleware(RequestDelegate next, IConfiguration configuration)
+    public JwtMiddleware(RequestDelegate next)
     {
         _next = next;
-        _configuration = configuration;
     }
 
     public async Task Invoke(HttpContext context, IUserRepository userRepository)
@@ -27,7 +24,7 @@ public class JwtMiddleware
         await _next(context);
     }
 
-    private async Task AttachUserToContext(HttpContext context, IUserRepository userRepository, string token)
+    private static async Task AttachUserToContext(HttpContext context, IUserRepository userRepository, string token)
     {
         try
         {
@@ -47,11 +44,11 @@ public class JwtMiddleware
             var jwtToken = (JwtSecurityToken)validatedToken;
             var username = jwtToken.Claims.First(x => x.Type == JwtRegisteredClaimNames.UniqueName).Value;
             
-            context.Items["User"] = await userRepository.GetUserByUsernameAsync(username);
+            context.Items["User"] = await userRepository.GetByUsernameAsync(username);
         }
         catch
         {
-            throw;
+            // Token validation failed - user will not be attached to context
         }
     }
 }

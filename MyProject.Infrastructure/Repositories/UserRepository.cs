@@ -1,43 +1,29 @@
 using Microsoft.EntityFrameworkCore;
+using MyProject.Application.Interfaces.Repositories;
 using MyProject.Domain.Entities;
-using MyProject.Domain.Interfaces;
 using MyProject.Infrastructure.Persistence;
 
 namespace MyProject.Infrastructure.Repositories;
 
 public sealed class UserRepository(AppDbContext context) : GenericRepository<User>(context), IUserRepository
 {
-    public async Task<bool> AddUserAsync(User user)
+    public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        var existingUser = await _dbSet
-            .FirstOrDefaultAsync(u => u.Username == user.Username || u.Email == user.Email);
-        if (existingUser != null)
-        {
-            return false;
-        }
-        
-        await AddAsync(user);
-        await SaveChangesAsync();
-        return true;
+        return await DbSet.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
     }
 
-    public async Task<User?> GetUserByUsernameAsync(string username)
+    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FirstOrDefaultAsync(u => u.Username == username);
+        return await DbSet.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
     }
 
-    public async Task<User?> GetUserByEmailAsync(string email)
+    public async Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
+        return await DbSet.AnyAsync(u => u.Username == username, cancellationToken);
     }
 
-    public async Task<bool> ExistsByUsernameAsync(string username)
+    public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.AnyAsync(u => u.Username == username);
-    }
-
-    public async Task<bool> ExistsByEmailAsync(string email)
-    {
-        return await _dbSet.AnyAsync(u => u.Email == email);
+        return await DbSet.AnyAsync(u => u.Email == email, cancellationToken);
     }
 }

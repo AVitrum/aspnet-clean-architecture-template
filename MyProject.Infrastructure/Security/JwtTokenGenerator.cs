@@ -1,7 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using MyProject.Application.Interfaces;
+using MyProject.Application.Interfaces.Security;
 using MyProject.Domain.Entities;
 
 namespace MyProject.Infrastructure.Security;

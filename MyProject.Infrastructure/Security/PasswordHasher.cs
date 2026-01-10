@@ -1,4 +1,4 @@
-using MyProject.Application.Interfaces;
+using MyProject.Application.Interfaces.Security;
 
 namespace MyProject.Infrastructure.Security;
 
