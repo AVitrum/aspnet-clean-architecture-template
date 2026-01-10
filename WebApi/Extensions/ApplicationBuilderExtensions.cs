@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Application.Interfaces.Persistence;
+using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using WebApi.Middleware;
 
 namespace WebApi.Extensions;
@@ -9,8 +11,21 @@ public static class ApplicationBuilderExtensions
     public static async Task MigrateDatabaseAsync(this IApplicationBuilder app)
     {
         using var scope = app.ApplicationServices.CreateScope();
-        var migrator = scope.ServiceProvider.GetRequiredService<IDbMigrator>();
-        await migrator.MigrateAsync();
+        var services = scope.ServiceProvider;
+        try
+        {
+            var dbContext = services.GetRequiredService<AppDbContext>();
+            if ((await dbContext.Database.GetPendingMigrationsAsync()).Any())
+            {
+                await dbContext.Database.MigrateAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred while migrating the database.");
+            throw;
+        }
     }
     
     public static void ConfigurePipeline(this WebApplication app)

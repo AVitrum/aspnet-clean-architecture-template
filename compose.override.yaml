@@ -1,0 +1,21 @@
+﻿# ==============================================================================
+# Docker Compose Override for Local Development
+# ==============================================================================
+# This file extends compose.yaml with development-specific settings.
+# Run with: docker-compose up
+# ==============================================================================
+
+services:
+  db:
+    # Expose PostgreSQL port for local access
+    ports:
+      - "5432:5432"
+    
+  server:
+    # Development settings
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    # Mount source code for hot reload (optional)
+    # volumes:
+    #   - ./WebApi:/app/WebApi:ro
+

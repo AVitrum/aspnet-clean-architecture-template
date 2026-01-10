@@ -20,7 +20,9 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
     public string GenerateToken(User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
+        var key = Encoding.ASCII.GetBytes(GetJwtKey());
+        var expiryMinutes = GetExpiryMinutes();
+        
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity([
@@ -29,13 +31,43 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             ]),
-            Expires = DateTime.UtcNow.AddHours(1),
-            Issuer = _configuration["Jwt:Issuer"],
-            Audience = _configuration["Jwt:Audience"],
+            Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
+            Issuer = GetJwtIssuer(),
+            Audience = GetJwtAudience(),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
         
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
+    }
+    
+    private string GetJwtKey()
+    {
+        return Environment.GetEnvironmentVariable("JWT_KEY") 
+            ?? _configuration["Jwt:Key"] 
+            ?? throw new InvalidOperationException("JWT_KEY environment variable or Jwt:Key configuration is required");
+    }
+    
+    private string GetJwtIssuer()
+    {
+        return Environment.GetEnvironmentVariable("JWT_ISSUER") 
+            ?? _configuration["Jwt:Issuer"] 
+            ?? "CleanArchitecture";
+    }
+    
+    private string GetJwtAudience()
+    {
+        return Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+            ?? _configuration["Jwt:Audience"] 
+            ?? "CleanArchitectureUsers";
+    }
+    
+    private int GetExpiryMinutes()
+    {
+        var envValue = Environment.GetEnvironmentVariable("JWT_EXPIRY_MINUTES");
+        if (!string.IsNullOrEmpty(envValue) && int.TryParse(envValue, out var minutes))
+            return minutes;
+        
+        return 60; // Default to 60 minutes
     }
 }

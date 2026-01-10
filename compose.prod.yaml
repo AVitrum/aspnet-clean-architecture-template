@@ -1,0 +1,37 @@
+﻿# ==============================================================================
+# Docker Compose for Production
+# ==============================================================================
+# Use this file for production deployments.
+# Run with: docker-compose -f compose.yaml -f compose.prod.yaml up -d
+# ==============================================================================
+
+services:
+  db:
+    # Don't expose PostgreSQL port externally in production
+    ports: []
+    restart: always
+    environment:
+      # These should be set via environment variables or secrets
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    
+  server:
+    restart: always
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      
+      # All sensitive values MUST be set via environment variables
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      
+      JWT_KEY: ${JWT_KEY}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+      JWT_EXPIRY_MINUTES: ${JWT_EXPIRY_MINUTES:-60}
+      
+      LOG_LEVEL: Warning
+

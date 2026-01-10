@@ -1,0 +1,126 @@
+﻿name: Build and Deploy
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --configuration Release
+      env:
+        # Use GitHub Secrets for test configuration
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: testdb
+        DB_USER: postgres
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD_TEST }}
+        JWT_KEY: ${{ secrets.JWT_KEY_TEST }}
+        JWT_ISSUER: CleanArchitecture
+        JWT_AUDIENCE: CleanArchitectureUsers
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=sha
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./WebApi/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-staging:
+    needs: docker
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+    - name: Deploy to Staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your deployment commands here
+        # Example: kubectl, docker-compose, or cloud-specific CLI
+      env:
+        # These secrets are configured in GitHub repository settings
+        DB_HOST: ${{ secrets.STAGING_DB_HOST }}
+        DB_PORT: ${{ secrets.STAGING_DB_PORT }}
+        DB_NAME: ${{ secrets.STAGING_DB_NAME }}
+        DB_USER: ${{ secrets.STAGING_DB_USER }}
+        DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+        JWT_KEY: ${{ secrets.STAGING_JWT_KEY }}
+        JWT_ISSUER: ${{ secrets.STAGING_JWT_ISSUER }}
+        JWT_AUDIENCE: ${{ secrets.STAGING_JWT_AUDIENCE }}
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Deploy to Production
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here
+      env:
+        # Production secrets - configured in GitHub repository settings
+        DB_HOST: ${{ secrets.PROD_DB_HOST }}
+        DB_PORT: ${{ secrets.PROD_DB_PORT }}
+        DB_NAME: ${{ secrets.PROD_DB_NAME }}
+        DB_USER: ${{ secrets.PROD_DB_USER }}
+        DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+        JWT_KEY: ${{ secrets.PROD_JWT_KEY }}
+        JWT_ISSUER: ${{ secrets.PROD_JWT_ISSUER }}
+        JWT_AUDIENCE: ${{ secrets.PROD_JWT_AUDIENCE }}
+

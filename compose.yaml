@@ -1,14 +1,26 @@
+# ==============================================================================
+# Docker Compose Configuration
+# ==============================================================================
+# Uses .env file for configuration. Copy .env.example to .env before running.
+# Override in production by setting environment variables directly.
+# ==============================================================================
+
 services:
   db:
     image: postgres:latest
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: cleanarch
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-cleanarchdb}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   server:
     image: server
@@ -16,23 +28,40 @@ services:
       context: .
       dockerfile: WebApi/Dockerfile
     ports:
-      - "8001:443"
+      - "${ASPNETCORE_HTTPS_PORTS:-8001}:443"
       - "8000:80"
     environment:
-      ASPNETCORE_HTTPS_PORTS: "8001"
-      ASPNETCORE_URLS: "http://+;https://+"
-      ASPNETCORE_ENVIRONMENT: "Development"
-      ASPNETCORE_Kestrel__Certificates__Default__Password: "YourCertificatePassword"
-      ASPNETCORE_Kestrel__Certificates__Default__Path: "/https/app.pfx"
-      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=cleanarch;Username=postgres;Password=postgres"
-      Jwt__Key: "YourSuperSecretKeyThatIsAtLeast32CharactersLong!"
-      Jwt__Issuer: "CleanArchitecture"
-      Jwt__Audience: "CleanArchitectureUsers"
+      # Application Settings
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: ${ASPNETCORE_URLS:-http://+:80;https://+:443}
+      ASPNETCORE_HTTPS_PORTS: ${ASPNETCORE_HTTPS_PORTS:-8001}
+      
+      # Database - Uses Docker service name 'db' as host
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-cleanarchdb}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      
+      # JWT Configuration
+      JWT_KEY: ${JWT_KEY:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      JWT_ISSUER: ${JWT_ISSUER:-CleanArchitecture}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-CleanArchitectureUsers}
+      JWT_EXPIRY_MINUTES: ${JWT_EXPIRY_MINUTES:-60}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-Information}
+      LOG_PATH: ${LOG_PATH:-logs}
+      
+      # HTTPS Certificate (optional)
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${ASPNETCORE_Kestrel__Certificates__Default__Password:-}
+      ASPNETCORE_Kestrel__Certificates__Default__Path: ${ASPNETCORE_Kestrel__Certificates__Default__Path:-}
     volumes:
       - aspnet_https:/https/
       - ./logs:/app/logs
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:
